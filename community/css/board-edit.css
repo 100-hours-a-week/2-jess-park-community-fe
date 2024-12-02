@@ -1,0 +1,52 @@
+header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background-color: white;
+}
+
+header .profile {
+    position: relative;
+}
+
+header img.profile {
+    width: 40px;  /* 프로필 이미지 크기 조절 */
+    height: 40px;  /* 프로필 이미지 크기 조절 */
+    border-radius: 50%;  /* 원형으로 만들기 */
+    object-fit: cover;  /* 이미지 비율 유지 */
+    cursor: pointer;
+}
+
+header img.back {
+    width: 24px;  /* 뒤로가기 아이콘 크기 */
+    height: 24px;
+    cursor: pointer;
+}
+
+header .drop {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+header .drop a {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #333;
+}
+
+header .drop a:hover {
+    background-color: #f5f5f5;
+}
+
+.none {
+    display: none;
+}

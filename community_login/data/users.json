@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "test1@test1.com",
+      "userId": "adac5932-a1a2-42d1-a496-2acf33f15982",
+      "userName": "test1",
+      "password": "$2b$10$nbrMmKdpmJQ8CP9GEASJNum/zG/TCXucD/KUEtIVaPcMAykyoGhL.",
+      "profileImagePath": null
+    },
+    {
+      "id": "test@test.com",
+      "userId": "7847e330-c3e3-4aa4-95db-88c8535fea62",
+      "userName": "test",
+      "password": "$2b$10$O2n/wT05u.F4D.OQuDmRZ.3mQ/uISNcFccXgWzufww51Q7kDxOwgS",
+      "profileImagePath": "/public/image/profile/default.webp"
+    }
+  ]
+}
