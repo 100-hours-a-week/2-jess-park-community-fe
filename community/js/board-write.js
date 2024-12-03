@@ -4,6 +4,7 @@ import {
     authCheck,
     getQueryString,
     prependChild,
+    getCurrentSession,
 } from '../utils/function.js';
 import {
     createPost,
@@ -63,62 +64,34 @@ const getBoardData = () => {
 // 버튼 클릭시 이벤트
 const addBoard = async () => {
     try {
-        const boardData = getBoardData();
+        const session = getCurrentSession();
+        if (!session) throw new Error('로그인이 필요합니다.');
 
-        // 제목과 내용 필수 입력 체크
-        if (!boardData.postTitle.trim() || !boardData.postContent.trim()) {
-            return Dialog('알림', '제목과 내용을 모두 입력해주세요.');
-        }
+        // 입력값 검증 추가
+        const title = titleInput.value.trim();
+        const content = contentInput.value.trim();
 
-        if (boardData.postTitle.length > MAX_TITLE_LENGTH) {
-            return Dialog('알림', '제목은 26자 이하로 입력해주세요.');
-        }
+        if (!title) throw new Error('제목을 입력해주세요.');
+        if (!content) throw new Error('내용을 입력해주세요.');
 
-        if (boardData.postContent.length > MAX_CONTENT_LENGTH) {
-            return Dialog('알림', '내용은 1500자 이하로 입력해주세요.');
-        }
+        const postData = {
+            postTitle: title,
+            postContent: content,
+            attachFilePath: localStorage.getItem('postFilePath') || undefined
+        };
 
-        // 버튼 비활성화 (중복 제출 방지)
-        submitButton.disabled = true;
-
-        if (!isModifyMode) {
-            try {
-                const response = await createPost(boardData);
-                const data = await response.json();
-
-                if (response.status === HTTP_CREATED) {
-                    alert('게시글이 작성되었습니다.');
-                    window.location.href = `/board.html?id=${data.id}`;
-                    localStorage.removeItem('postFilePath');
-                } else {
-                    throw new Error(data.message || '게시글 작성에 실패했습니다.');
-                }
-            } catch (error) {
-                alert(error.message);
-                console.error('게시글 작성 중 오류:', error);
-            }
+        const response = await createPost(postData);
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('게시글 생성 성공:', data);
+            window.location.href = `./board.html?id=${data.data.id}`;
         } else {
-            try {
-                const postId = getQueryString('post_id');
-                const response = await updatePost(postId, boardData);
-
-                if (response.ok) {
-                    alert('게시글이 수정되었습니다.');
-                    window.location.href = `/board.html?id=${postId}`;
-                    localStorage.removeItem('postFilePath');
-                } else {
-                    throw new Error('게시글 수정에 실패했습니다.');
-                }
-            } catch (error) {
-                alert(error.message);
-                console.error('게시글 수정 중 오류:', error);
-            }
+            throw new Error(data.message || '게시글 작성에 실패했습니다.');
         }
     } catch (error) {
-        Dialog('오류', error.message || '게시글 작성에 실패했습니다.');
-    } finally {
-        // 버튼 다시 활성화
-        submitButton.disabled = false;
+        console.error('게시글 작성 중 오류:', error);
+        alert(error.message);
     }
 };
 const changeEventHandler = async (event, uid) => {
@@ -298,4 +271,14 @@ const init = async () => {
     }
 };
 
-init();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // header 초기화 추가
+        initializeHeader();
+        
+        init();
+    } catch (error) {
+        console.error('초기화 오류:', error);
+        alert(error.message);
+    }
+});

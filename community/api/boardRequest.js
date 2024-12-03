@@ -2,11 +2,19 @@ import { getServerUrl, getCurrentSession } from '../utils/function.js';
 
 export const getPost = async (postId) => {
     try {
-        const session = getCurrentSession();
-        if (!session) throw new Error('로그인이 필요합니다.');
+        if (!postId) {
+            throw new Error('게시글 ID가 필요합니다.');
+        }
 
-        console.log('세션 정보:', session);
-        console.log('요청 URL:', `${getServerUrl()}/api/posts/${postId}`);
+        const session = getCurrentSession();
+        if (!session) {
+            throw new Error('로그인이 필요합니다.');
+        }
+
+        console.log('게시글 조회 요청:', {
+            postId,
+            session
+        });
 
         const response = await fetch(`${getServerUrl()}/api/posts/${postId}`, {
             method: 'GET',
@@ -14,19 +22,16 @@ export const getPost = async (postId) => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${session.sessionId}`,
                 'userId': session.userId
-            },
-            credentials: 'include'
+            }
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || '게시글을 불러오는데 실패했습니다.');
+            throw new Error('게시글을 불러오는데 실패했습니다.');
         }
 
-        console.log('API 응답 상태:', response.status);
         return response;
     } catch (error) {
-        console.error('API 요청 오류:', error);
+        console.error('API 요청 상세 정보:', error);
         throw error;
     }
 };

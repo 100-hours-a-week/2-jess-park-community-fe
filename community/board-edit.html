@@ -12,14 +12,23 @@
     </head>
     <body>
         <header>
-            <img class="back" src="/public/">
+            <img 
+                class="back" 
+                src="/public/navigate_before.svg" 
+                alt="뒤로가기"
+            >
             <h1>커뮤니티</h1>
             <div class="profile">
-                <img class="profile" loading="anonymous" src="./public/image/profile/default.webp">
+                <img 
+                    class="profile" 
+                    loading="eager" 
+                    src="/public/image/profile/default.webp"
+                    alt="프로필"
+                >
                 <div class="drop none">
-                    <a href="./modifyInfo.html">회원정보수정</a>
-                    <a href="./modifyPassword.html">비밀번호수정</a>
-                    <a>로그아웃</a>
+                    <a href="/modifyInfo.html">회원정보수정</a>
+                    <a href="/modifyPassword.html">비밀번호수정</a>
+                    <a id="logoutBtn" style="cursor: pointer;">로그아웃</a>
                 </div>
             </div>
         </header>

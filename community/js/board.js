@@ -3,8 +3,8 @@ import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import {
     authCheck,
-    prependChild,
-    padTo2Digits,
+    getServerUrl,
+    getCurrentSession,
 } from '../utils/function.js';
 import {
     getPost,
@@ -14,6 +14,7 @@ import {
     updateComment,
     deleteComment,
 } from '../api/boardRequest.js';
+import initializeHeader from '../component/header/header.js';
 
 const DEFAULT_PROFILE_IMAGE = '/public/image/profile/default.webp';
 const MAX_COMMENT_LENGTH = 1000;
@@ -30,55 +31,82 @@ const getBoardDetail = async (postId) => {
         console.log('게시글 조회 시작:', postId);
         
         const response = await getPost(postId);
-        console.log('API 응답:', {
-            status: response.status,
-            ok: response.ok,
-            statusText: response.statusText
-        });
-        
         const data = await response.json();
-        console.log('응답 데이터:', data);
         
-        return data;
+        console.log('API 응답 데이터:', data);
+
+        if (!data.success) {
+            throw new Error(data.message || '게시글 조회에 실패했습니다.');
+        }
+
+        return data.data;
     } catch (error) {
-        console.error('게시글 조회 오류:', error);
+        console.error('게시글 조회 상세 오류:', error);
         throw error;
     }
 };
 
 const setBoardDetail = async (data, myInfo) => {
     try {
-        console.log('게시글 데이터:', data);
         console.log('현재 사용자:', myInfo);
+        console.log('게시글 작성자:', data.userId);
 
-        const titleElement = document.querySelector('.title');
-        const nicknameElement = document.querySelector('.nickname');
-        const createdAtElement = document.querySelector('.createdAt');
-        const profileImgElement = document.querySelector('.profileImg img');
-        const contentElement = document.querySelector('.content');
-        const viewCountElement = document.querySelector('.viewCount h3');
-        const commentCountElement = document.querySelector('.commentCount h3');
+        // 수정/삭제 버튼 요소
         const modElement = document.querySelector('.mod');
+        const modifyBtn = document.querySelector('#modifyBtn');
+        const deleteBtn = document.querySelector('#deleteBtn');
+
+        // 작성자 확인 및 버튼 표시
+        if (myInfo.userId === data.userId) {
+            modElement?.classList.remove('hidden');
+            
+            // 수정 버튼 이벤트
+            modifyBtn?.addEventListener('click', () => {
+                window.location.href = `/board-edit.html?post_id=${data.id}`;
+            });
+
+            // 삭제 버튼 이벤트
+            deleteBtn?.addEventListener('click', async () => {
+                if (confirm('정말 삭제하시겠습니까?')) {
+                    try {
+                        const response = await deletePost(data.id);
+                        if (response.success) {
+                            alert('게시글이 삭제되었습니다.');
+                            window.location.href = '/index.html';
+                        }
+                    } catch (error) {
+                        console.error('삭제 오류:', error);
+                        alert(error.message);
+                    }
+                }
+            });
+        } else {
+            modElement?.classList.add('hidden');
+        }
+
+        // 요소 선택
+        const elements = {
+            title: document.querySelector('.title'),
+            nickname: document.querySelector('.nickname'),
+            createdAt: document.querySelector('.createdAt'),
+            content: document.querySelector('.content'),
+            viewCount: document.querySelector('.viewCount h3'),
+            commentCount: document.querySelector('.commentCount h3'),
+            modElement: document.querySelector('.mod')
+        };
 
         // 기본 정보 설정
-        if (titleElement) titleElement.textContent = data.title || '';
-        if (nicknameElement) nicknameElement.textContent = data.author || '';
-        if (createdAtElement && data.created_at) {
-            createdAtElement.textContent = new Date(data.created_at).toLocaleString();
+        if (elements.title) elements.title.textContent = data.title;
+        if (elements.nickname) elements.nickname.textContent = data.author;
+        if (elements.createdAt && data.created_at) {
+            elements.createdAt.textContent = new Date(data.created_at).toLocaleString();
         }
-        if (profileImgElement) {
-            profileImgElement.onerror = function() {
-                this.onerror = null;
-                this.src = DEFAULT_PROFILE_IMAGE;
-            };
-            profileImgElement.src = data.profileImagePath || DEFAULT_PROFILE_IMAGE;
-        }
-        if (contentElement) contentElement.textContent = data.content || '';
-        if (viewCountElement) viewCountElement.textContent = (data.hits || 0).toLocaleString();
-        if (commentCountElement) commentCountElement.textContent = (data.comment_count || 0).toLocaleString();
+        if (elements.content) elements.content.textContent = data.content;
+        if (elements.viewCount) elements.viewCount.textContent = (data.hits || 0).toLocaleString();
+        if (elements.commentCount) elements.commentCount.textContent = (data.comment_count || 0).toLocaleString();
 
         // 작성자 확인 및 수정/삭제 버튼 표시
-        if (modElement) {
+        if (elements.modElement) {
             console.log('작성자 확인:', {
                 currentUser: myInfo.userId,
                 postAuthor: data.userId,
@@ -86,41 +114,17 @@ const setBoardDetail = async (data, myInfo) => {
             });
 
             if (myInfo.userId === data.userId) {
-                modElement.classList.remove('hidden');
-                
-                // 삭제 버튼 이벤트
-                const deleteBtn = document.getElementById('deleteBtn');
-                if (deleteBtn) {
-                    deleteBtn.onclick = async () => {
-                        try {
-                            if (confirm('게시글을 삭제하시겠습니까?')) {
-                                const response = await deletePost(data.id);
-                                
-                                if (response && response.success) {
-                                    alert('게시글이 삭제되었습니다.');
-                                    window.location.href = '/pages/board-list.html';
-                                } else {
-                                    throw new Error(response.message || '게시글 삭제에 실패했습니다.');
-                                }
-                            }
-                        } catch (error) {
-                            console.error('삭제 오류:', error);
-                            alert(error.message);
-                        }
-                    };
-                }
-
-                // 수정 버튼 이벤트
-                const modifyBtn = document.getElementById('modifyBtn');
-                if (modifyBtn) {
-                    modifyBtn.onclick = () => {
-                        window.location.href = `/pages/board-write.html?id=${data.id}`;
-                    };
-                }
+                elements.modElement.classList.remove('hidden');
             } else {
-                modElement.classList.add('hidden');
+                elements.modElement.classList.add('hidden');
             }
         }
+
+        console.log('수정/삭제 버튼:', {
+            modElement: !!modElement,
+            modifyBtn: !!modifyBtn,
+            deleteBtn: !!deleteBtn
+        });
     } catch (error) {
         console.error('게시글 데이터 설정 오류:', error);
         throw error;
@@ -392,34 +396,19 @@ const refreshComments = async (postId) => {
 
 const init = async () => {
     try {
-        const myInfo = await authCheck();
-        if (!myInfo) {
-            throw new Error('인증이 필요합니다.');
-        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+        
+        console.log('게시글 ID:', postId); // 디버깅용
 
-        const postId = getQueryString('id');
         if (!postId) {
-            throw new Error('게시글 ID가 필요합니다.');
+            throw new Error('게시글 ID가 없습니다.');
         }
 
-        // 게시글 상세 정보 로드
-        const postData = await getBoardDetail(postId);
-        console.log('게시글 데이터:', postData);
-
-        if (!postData.success || !postData.data) {
-            throw new Error('게시글을 찾을 수 없습니다.');
-        }
-
-        // myInfo를 함께 전달하여 setBoardDetail 호출
-        await setBoardDetail(postData.data, myInfo);
-
-        // 댓글 목록 로드 및 UI 초기화
-        await refreshComments(postId);
-
+        const post = await getBoardDetail(postId);
+        // ... 나머지 코드
     } catch (error) {
         console.error('초기화 오류:', error);
-        alert(error.message || '페이지 로드에 실패했습니다.');
-        window.location.href = '/';
     }
 };
 
@@ -485,5 +474,88 @@ const renderPosts = (posts) => {
         listElement.appendChild(postElement);
     });
 };
+
+// 게시글 데이터를 받아와서 화면에 표시하는 함수
+const renderPost = (postData) => {
+    console.log('렌더링할 데이터:', postData); // 디버깅을 위한 로그 추가
+
+    const titleElement = document.querySelector('.post-title');
+    const contentElement = document.querySelector('.post-content');
+    const authorElement = document.querySelector('.post-author');
+    const dateElement = document.querySelector('.post-date');
+
+    if (titleElement) titleElement.textContent = postData.title;
+    if (contentElement) contentElement.textContent = postData.content;
+    if (authorElement) authorElement.textContent = postData.author;
+    if (dateElement) dateElement.textContent = new Date(postData.created_at).toLocaleDateString();
+};
+
+// 게시글 로드 함수
+const loadPost = async (postId) => {
+    try {
+        const response = await fetch(`${getServerUrl()}/api/posts/${postId}`, {
+            headers: {
+                'Authorization': `Bearer ${getCurrentSession().sessionId}`,
+                'userId': getCurrentSession().userId
+            }
+        });
+
+        const data = await response.json();
+        console.log('받아온 데이터:', data); // 디버깅을 위한 로그 추가
+
+        if (data.success) {
+            renderPost(data.data);
+        } else {
+            throw new Error('게시글을 불러오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('게시글 로드 중 오류:', error);
+        alert(error.message);
+    }
+};
+
+// URL에서 게시글 ID를 제대로 가져오는지 확인
+const postId = new URLSearchParams(window.location.search).get('id');
+console.log('게시글 ID:', postId);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const postId = new URLSearchParams(window.location.search).get('id');
+    console.log('게시글 ID:', postId); // 디버깅을 위한 로그 추가
+
+    if (postId) {
+        loadPost(postId);
+    }
+});
+
+// 페이지 로드 시 실행
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // header 초기화 추가
+        initializeHeader();
+        
+        const postId = getQueryString('id');
+        console.log('게시글 ID:', postId);
+
+        if (!postId) {
+            throw new Error('게시글 ID가 없습니다.');
+        }
+
+        const myInfo = getCurrentSession();
+        console.log('현재 세션:', myInfo);
+
+        const response = await getPost(postId);
+        const result = await response.json();
+        console.log('게시글 데이터:', result);
+
+        if (result.success) {
+            await setBoardDetail(result.data, myInfo);
+        } else {
+            throw new Error(result.message || '게시글 로드에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('페이지 로드 오류:', error);
+        alert(error.message);
+    }
+});
 
 
