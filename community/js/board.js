@@ -13,6 +13,8 @@ import {
     getBoardComment,
     updateComment,
     deleteComment,
+    likeComment,
+    increaseViewCount
 } from '../api/boardRequest.js';
 import initializeHeader from '../component/header/header.js';
 
@@ -67,17 +69,19 @@ const setBoardDetail = async (data, myInfo) => {
 
             // 삭제 버튼 이벤트
             deleteBtn?.addEventListener('click', async () => {
-                if (confirm('정말 삭제하시겠습니까?')) {
-                    try {
-                        const response = await deletePost(data.id);
-                        if (response.success) {
-                            alert('게시글이 삭제되었습니다.');
-                            window.location.href = '/index.html';
-                        }
-                    } catch (error) {
-                        console.error('삭제 오류:', error);
-                        alert(error.message);
+                if (!confirm('정말 삭제하시겠습니까?')) return;
+                
+                try {
+                    const response = await deletePost(data.id);
+                    if (response.success) {
+                        alert('게시글이 삭제되었습니다.');
+                        window.location.href = '/index.html';
+                    } else {
+                        throw new Error(response.message || '게시글 삭제에 실패했습니다.');
                     }
+                } catch (error) {
+                    console.error('삭제 오류:', error);
+                    alert(error.message);
                 }
             });
         } else {
@@ -269,21 +273,27 @@ const setBoardComment = (comments, myInfo) => {
                 const deleteBtn = commentElement.querySelector('.deleteComment');
                 if (deleteBtn) {
                     deleteBtn.onclick = async () => {
-                        if (confirm('댓글을 삭제하시겠습니까?')) {
-                            try {
-                                console.log('삭제 시도:', { postId, commentId: comment.id });
-                                const response = await deleteComment(postId, comment.id);
-                                console.log('삭제 응답:', response);
+                        if (!confirm('댓글을 삭제하시겠습니까?')) return;
+                        
+                        try {
+                            const response = await deleteComment(postId, comment.id);
+                            
+                            if (response.success) {
+                                // DOM에서 댓글 요소만 제거
+                                commentElement.remove();
                                 
-                                if (response.success) {
-                                    await refreshComments(postId);
-                                } else {
-                                    throw new Error(response.message || '댓글 삭제에 실패했습니다.');
+                                // 댓글 수 감소
+                                const commentCountElement = document.querySelector('.commentCount h3');
+                                if (commentCountElement) {
+                                    const currentCount = parseInt(commentCountElement.textContent.replace(/,/g, ''));
+                                    commentCountElement.textContent = (currentCount - 1).toLocaleString();
                                 }
-                            } catch (error) {
-                                console.error('댓글 삭제 오류:', error);
-                                alert(error.message || '댓글 삭제에 실패했습니다.');
+                            } else {
+                                throw new Error(response.message || '댓글 삭제에 실패했습니다.');
                             }
+                        } catch (error) {
+                            console.error('댓글 삭제 오류:', error);
+                            alert(error.message);
                         }
                     };
                 }
@@ -394,26 +404,211 @@ const refreshComments = async (postId) => {
     }
 };
 
-const init = async () => {
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const postId = urlParams.get('id');
-        
-        console.log('게시글 ID:', postId); // 디버깅용
+// 댓글 입력 관련 요소 선택
+const commentTextarea = document.querySelector('.commentInputWrap textarea');
+const commentSubmitBtn = document.querySelector('.commentInputBtn');
 
-        if (!postId) {
-            throw new Error('게시글 ID가 없습니다.');
+// 댓글 입력 이벤트 리스너
+const initializeCommentInput = () => {
+    if (!commentTextarea || !commentSubmitBtn) return;
+
+    // 텍스트 입력 시 버튼 활성화/비활성화
+    commentTextarea.addEventListener('input', () => {
+        const content = commentTextarea.value.trim();
+        commentSubmitBtn.disabled = !content;
+        commentSubmitBtn.style.backgroundColor = content ? '#7F6AEE' : '#ACA0EB';
+    });
+
+    // 댓글 등록 버튼 클릭 이벤트
+    commentSubmitBtn.addEventListener('click', async () => {
+        try {
+            const postId = getQueryString('id');
+            const content = commentTextarea.value.trim();
+            
+            if (!content) {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+
+            console.log('댓글 작성 시도:', { postId, content });
+            const response = await writeComment(postId, content);
+            console.log('댓글 작성 응답:', response);
+
+            if (response.success) {
+                // 댓글 입력창 초기화
+                commentTextarea.value = '';
+                commentSubmitBtn.disabled = true;
+                commentSubmitBtn.style.backgroundColor = '#ACA0EB';
+                
+                // 댓글 목록 새로고침
+                await loadComments(postId);
+            }
+        } catch (error) {
+            console.error('댓글 작성 오류:', error);
+            alert(error.message);
         }
+    });
+};
 
-        const post = await getBoardDetail(postId);
-        // ... 나머지 코드
+// 댓글 목록 로드 함수
+const loadComments = async (postId) => {
+    try {
+        console.log('댓글 목록 로드 시도:', postId);
+        const response = await getBoardComment(postId);
+        console.log('댓글 목록 응답:', response);
+
+        if (response.success) {
+            renderComments(response.data);
+            setCommentCount(response.data.length);
+        }
     } catch (error) {
-        console.error('초기화 오류:', error);
+        console.error('댓글 로드 오류:', error);
+        alert(error.message);
     }
 };
 
-// 페이지 로드 시 한 번만 초기화
-document.addEventListener('DOMContentLoaded', init);
+// 댓글 목록 렌더링 함수
+const renderComments = (comments) => {
+    const commentList = document.querySelector('.commentList');
+    if (!commentList) return;
+    
+    commentList.innerHTML = '';
+    const myInfo = getCurrentSession();
+    const postId = getQueryString('id');
+
+    comments.forEach(comment => {
+        const commentElement = document.createElement('div');
+        commentElement.className = 'commentItem';
+        
+        // 작성자 본인 여부 확인
+        const isMine = myInfo.userId === comment.userId;
+        
+        commentElement.innerHTML = `
+            <div class="commentHeader">
+                <div class="commentUser">
+                    <span class="author">${comment.author}</span>
+                    <span class="date">${new Date(comment.created_at).toLocaleString()}</span>
+                </div>
+                ${isMine ? `
+                    <div class="commentActions">
+                        <button class="editComment">수정</button>
+                        <button class="deleteComment">삭제</button>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="commentContent">
+                <p class="commentText">${comment.content}</p>
+                <div class="editForm" style="display: none;">
+                    <textarea>${comment.content}</textarea>
+                    <div class="editButtons">
+                        <button class="saveEdit">저장</button>
+                        <button class="cancelEdit">취소</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 수정 버튼 이벤트 리스너
+        if (isMine) {
+            const editBtn = commentElement.querySelector('.editComment');
+            const deleteBtn = commentElement.querySelector('.deleteComment');
+            const commentText = commentElement.querySelector('.commentText');
+            const editForm = commentElement.querySelector('.editForm');
+            const saveBtn = commentElement.querySelector('.saveEdit');
+            const cancelBtn = commentElement.querySelector('.cancelEdit');
+
+            // 수정 버튼 클릭
+            editBtn?.addEventListener('click', () => {
+                commentText.style.display = 'none';
+                editForm.style.display = 'block';
+            });
+
+            // 취소 버튼 클릭
+            cancelBtn?.addEventListener('click', () => {
+                commentText.style.display = 'block';
+                editForm.style.display = 'none';
+            });
+
+            // 저장 버튼 클릭
+            saveBtn?.addEventListener('click', async () => {
+                try {
+                    const newContent = editForm.querySelector('textarea').value.trim();
+                    if (!newContent) {
+                        alert('댓글 내용을 입력해주세요.');
+                        return;
+                    }
+
+                    console.log('댓글 수정 시도:', { postId, commentId: comment.id, content: newContent });
+                    const response = await updateComment(postId, comment.id, newContent);
+                    console.log('댓글 수정 응답:', response);
+                    
+                    if (response.success) {
+                        await loadComments(postId);
+                    } else {
+                        throw new Error(response.message || '댓글 수정에 실패했습니다.');
+                    }
+                } catch (error) {
+                    console.error('댓글 수정 오류:', error);
+                    alert(error.message);
+                }
+            });
+
+            // 삭제 버튼 클릭
+            deleteBtn?.addEventListener('click', async () => {
+                if (confirm('댓글을 삭제하시겠습니까?')) {
+                    try {
+                        console.log('댓글 삭제 시도:', { postId, commentId: comment.id });
+                        const response = await deleteComment(postId, comment.id);
+                        console.log('댓글 삭제 응답:', response);
+                        
+                        if (response.success) {
+                            await loadComments(postId);
+                        } else {
+                            throw new Error(response.message || '댓글 삭제에 실패했습니다.');
+                        }
+                    } catch (error) {
+                        console.error('댓글 삭제 오류:', error);
+                        alert(error.message);
+                    }
+                }
+            });
+        }
+
+        commentList.appendChild(commentElement);
+    });
+};
+
+// 댓글 수 업데이트 (이름 변경)
+const setCommentCount = (count) => {
+    const commentCountElement = document.querySelector('.commentCount h3');
+    if (commentCountElement) {
+        commentCountElement.textContent = count.toLocaleString();
+    }
+};
+
+// 기존 init 함수 내부에 댓글 초기화 코드 추가
+const init = async () => {
+    try {
+        // header 초기화
+        initializeHeader();
+        
+        // 게시글 상세 정보 로드
+        const postId = getQueryString('id');
+        const data = await getBoardDetail(postId);
+        const myInfo = getCurrentSession();
+        
+        // 게시글 데이터 설정
+        await setBoardDetail(data, myInfo);
+        
+        // 댓글 기능 초기화 추가
+        initializeCommentInput();
+        await loadComments(postId);
+        
+    } catch (error) {
+        console.error('초기화 오류:', error);
+        alert(error.message);
+    }
+};
 
 const loadPosts = async () => {
     try {
@@ -537,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('게시글 ID:', postId);
 
         if (!postId) {
-            throw new Error('게시글 ID가 없습니다.');
+            throw new Error('게시글 ID��� 없습니다.');
         }
 
         const myInfo = getCurrentSession();
@@ -557,5 +752,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(error.message);
     }
 });
+
+const handleCommentLike = async (postId, commentId) => {
+    try {
+        const response = await likeComment(postId, commentId);
+        if (response.success) {
+            await refreshComments(postId);
+        }
+    } catch (error) {
+        console.error('좋아요 오류:', error);
+        alert(error.message);
+    }
+};
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', init);
 
 
