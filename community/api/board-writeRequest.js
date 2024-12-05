@@ -65,20 +65,34 @@ export const updatePost = async (postId, postData) => {
             throw new Error('로그인이 필요합니다.');
         }
 
+        console.log('수정 요청 데이터:', {
+            postId,
+            postData,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.sessionId}`,
+                'userId': session.userId
+            }
+        });
+
         const response = await fetch(`${getServerUrl()}/api/posts/${postId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.sessionId}`
+                'Authorization': `Bearer ${session.sessionId}`,
+                'userId': session.userId
             },
             body: JSON.stringify(postData)
         });
 
+        const result = await response.json();
+        
         if (!response.ok) {
-            throw new Error('게시글 수정에 실패했습니다.');
+            throw new Error(result.message || '게시글 수정에 실패했습니다.');
         }
 
-        return response;
+        return result;
+
     } catch (error) {
         console.error('게시글 수정 오류:', error);
         throw error;

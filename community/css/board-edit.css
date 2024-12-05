@@ -1,31 +1,108 @@
-header {
-    position: relative;
+@import url('./common/layout.css');
+@import url('../component/header/header.css');
+
+.wrap {
+    width: 100%;
+    padding-left: 16px;
+    padding-right: 16px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    row-gap: 16px;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 31px;
+    letter-spacing: -0.02em;
+    text-align: center;
+    color: rgba(69, 72, 84, 1);
+}
+
+.inputBox {
+    display: flex;
+    flex-direction: column;
+    row-gap: 8px;
+    width: 100%;
+}
+
+.inputBox label {
+    font-size: 14px;
+    line-height: 17px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: rgba(69, 72, 84, 1);
+    padding: 16px 16px;
+    border-bottom: 1px solid #00000029;
+}
+
+.inputBox input {
+    width: 100%;
     padding: 16px;
-    background-color: white;
+    border: none;
+    border-bottom: 1px solid #00000029;
+    background-color: transparent;
 }
 
-header .profile {
-    position: relative;
+.inputBox textarea {
+    width: 100%;
+    padding: 16px;
+    height: 200px;
+    resize: none;
+    outline: none;
+    border: none;
+    border-bottom: 1px solid #00000029;
+    background-color: transparent;
 }
 
-header img.profile {
-    width: 40px;  /* 프로필 이미지 크기 조절 */
-    height: 40px;  /* 프로필 이미지 크기 조절 */
-    border-radius: 50%;  /* 원형으로 만들기 */
-    object-fit: cover;  /* 이미지 비율 유지 */
+#update {
+    width: 80%;
+    height: 33px;
+    margin-top: 20px;
+    border-radius: 4px;
     cursor: pointer;
+    background-color: #aca0eb;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 16.8px;
+    letter-spacing: -0.02em;
+    text-align: center;
+    color: rgba(255, 255, 255, 1);
+    border: none;
 }
 
+.non-border {
+    border: none !important;
+    padding: 0 16px !important;
+}
+
+.helperText {
+    color: #f00;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
+/* 헤더 이미지 관련 스타일 */
 header img.back {
-    width: 24px;  /* 뒤로가기 아이콘 크기 */
+    width: 24px;
     height: 24px;
     cursor: pointer;
 }
 
-header .drop {
+header img.profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* 드롭다운 메뉴 스타일 */
+.drop {
     position: absolute;
     top: 100%;
     right: 0;
@@ -36,14 +113,14 @@ header .drop {
     z-index: 1000;
 }
 
-header .drop a {
+.drop a {
     display: block;
     padding: 8px 16px;
     text-decoration: none;
     color: #333;
 }
 
-header .drop a:hover {
+.drop a:hover {
     background-color: #f5f5f5;
 }
 

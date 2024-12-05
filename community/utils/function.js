@@ -195,3 +195,6 @@ export const fetchWithAuth = async (url, options = {}) => {
 
     return { response, data };
 };
+
+const session = getCurrentSession();
+console.log('현재 세션 정보:', session);
