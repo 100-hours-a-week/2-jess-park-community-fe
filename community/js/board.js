@@ -74,14 +74,19 @@ const setBoardDetail = async (data, myInfo) => {
                 try {
                     const response = await deletePost(data.id);
                     if (response.success) {
-                        alert('게시글이 삭제되었습니다.');
-                        window.location.href = '/index.html';
+                        // 성공 시 바로 이동
+                        window.location.replace('/index.html');
                     } else {
                         throw new Error(response.message || '게시글 삭제에 실패했습니다.');
                     }
                 } catch (error) {
                     console.error('삭제 오류:', error);
-                    alert(error.message);
+                    // 404 에러는 무시하고 이동
+                    if (error.message.includes('찾을 수 없습니다')) {
+                        window.location.replace('/index.html');
+                    } else {
+                        alert(error.message);
+                    }
                 }
             });
         } else {
@@ -106,8 +111,18 @@ const setBoardDetail = async (data, myInfo) => {
             elements.createdAt.textContent = new Date(data.created_at).toLocaleString();
         }
         if (elements.content) elements.content.textContent = data.content;
-        if (elements.viewCount) elements.viewCount.textContent = (data.hits || 0).toLocaleString();
-        if (elements.commentCount) elements.commentCount.textContent = (data.comment_count || 0).toLocaleString();
+        
+        // 조회수 표시
+        if (elements.viewCount) {
+            const hits = parseInt(data.hits || 0);
+            elements.viewCount.textContent = hits.toLocaleString();
+            console.log('조회수 설정:', hits);  // 디버깅 로그
+        }
+
+        // 댓글 수 설정
+        if (elements.commentCount) {
+            elements.commentCount.textContent = (data.comment_count || 0).toLocaleString();
+        }
 
         // 작성자 확인 및 수정/삭제 버튼 표시
         if (elements.modElement) {
@@ -129,38 +144,40 @@ const setBoardDetail = async (data, myInfo) => {
             modifyBtn: !!modifyBtn,
             deleteBtn: !!deleteBtn
         });
+
+        // 디버깅 로그
+        console.log('받은 데이터:', data);
+
+        // 좋아요 섹션 설정
+        const likeButton = document.getElementById('likeButton');
+        const likeCount = document.querySelector('.likeCount');
+        
+        if (likeCount) {
+            likeCount.textContent = data.likeCount || '0';
+        }
+
+        // 좋아요 버튼 클릭 이벤트
+        if (likeButton) {
+            likeButton.style.cursor = 'pointer';
+            likeButton.addEventListener('click', async () => {
+                try {
+                    const response = await handleLike(data.id);
+                    if (response.success) {
+                        // 좋아요 수 업데이트
+                        likeCount.textContent = response.likeCount;
+                        // 하트 색상 토글
+                        const heart = likeButton.querySelector('i');
+                        heart.classList.toggle('active');
+                    }
+                } catch (error) {
+                    console.error('좋아요 처리 오류:', error);
+                }
+            });
+        }
+
     } catch (error) {
         console.error('게시글 데이터 설정 오류:', error);
         throw error;
-    }
-};
-
-const setBoardModify = async (data, myInfo) => {
-    if (myInfo.idx === data.writeId) {
-        const modifyElement = document.querySelector('.hidden');
-        modifyElement.classList.remove('hidden');
-
-        const modifyBtnElement = document.querySelector('#deleteBtn');
-        const postId = getQueryString('id');
-        modifyBtnElement.addEventListener('click', () => {
-            Dialog(
-                '게시글을 삭제하시겠습니까?',
-                '삭제한 내용은 복구 할 수 없습니다',
-                async () => {
-                    const response = await deletePost(postId);
-                    if (response.ok) {
-                        window.location.href = '/';
-                    } else {
-                        Dialog('삭제 실패', '게시글 삭제에 실패했습니다');
-                    }
-                },
-            );
-        });
-
-        const modifyBtnElement2 = document.querySelector('#modifyBtn');
-        modifyBtnElement2.addEventListener('click', () => {
-            window.location.href = `/board=modify.html?post_id=${data.post_id}`;
-        });
     }
 };
 
@@ -184,7 +201,7 @@ class CommentEditor {
         // 에디터 UI 생성
         const editorHTML = `
             <div class="commentEditWrap">
-                <textarea maxlength="1000">${currentContent}</textarea>
+                <textarea max_comment_length="1000">${currentContent}</textarea>
                 <div class="editBtnWrap">
                     <button class="saveBtn">저장</button>
                     <button class="cancelBtn">취소</button>
@@ -523,7 +540,7 @@ const renderComments = (comments) => {
                 editForm.style.display = 'block';
             });
 
-            // 취소 버튼 클릭
+            // 취소 버튼 릭
             cancelBtn?.addEventListener('click', () => {
                 commentText.style.display = 'block';
                 editForm.style.display = 'none';
@@ -586,14 +603,59 @@ const setCommentCount = (count) => {
     }
 };
 
-// 기존 init 함수 내부에 댓글 초기화 코드 추가
+// 뒤로가기 버튼 이벤트 핸들러 추가
+const initializeBackButton = () => {
+    const backButton = document.querySelector('.back');
+    if (backButton) {
+        backButton.addEventListener('click', () => {
+            window.location.href = '/index.html';
+        });
+        
+        // 커서 스타일 추가
+        backButton.style.cursor = 'pointer';
+    }
+};
+
+// 헤더의 프로필 드롭다운 초기화
+const initializeProfileDropdown = () => {
+    const profileImg = document.querySelector('.profile img');
+    const dropdownMenu = document.querySelector('.drop');
+    
+    if (profileImg && dropdownMenu) {
+        // 프로필 이미지 클릭 이벤트
+        profileImg.addEventListener('click', (event) => {
+            event.stopPropagation();  // 이벤트 버블링 방지
+            dropdownMenu.classList.toggle('none');
+        });
+
+        // 문서 클릭 시 드롭다운 메뉴 닫기
+        document.addEventListener('click', () => {
+            dropdownMenu.classList.add('none');
+        });
+    }
+};
+
+// init 함수 수정
 const init = async () => {
     try {
         // header 초기화
         initializeHeader();
         
-        // 게시글 상세 정보 로드
+        // 뒤로가기 버튼 초기화
+        initializeBackButton();
+        
+        // 프로필 드롭다운 초기화 추가
+        initializeProfileDropdown();
+        
         const postId = getQueryString('id');
+        if (!postId) {
+            throw new Error('게시글 ID가 없습니다.');
+        }
+
+        // 조회수 증가
+        await increaseViewCount(postId);
+        
+        // 게시글 데이터 로드
         const data = await getBoardDetail(postId);
         const myInfo = getCurrentSession();
         
@@ -704,7 +766,7 @@ const loadPost = async (postId) => {
             throw new Error('게시글을 불러오는데 실패했습니다.');
         }
     } catch (error) {
-        console.error('게시글 로드 중 오류:', error);
+        console.error('시글 로드 중 오류:', error);
         alert(error.message);
     }
 };
@@ -732,7 +794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('게시글 ID:', postId);
 
         if (!postId) {
-            throw new Error('게시글 ID��� 없습니다.');
+            throw new Error('게시글 ID가 없습니다.');
         }
 
         const myInfo = getCurrentSession();
@@ -767,5 +829,24 @@ const handleCommentLike = async (postId, commentId) => {
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', init);
+
+// 좋아요 처리 함수 
+const handleLike = async (postId) => {
+    try {
+        const response = await fetch(`${getServerUrl()}/api/posts/${postId}/like`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getCurrentSession()?.sessionId}`,
+                'userId': getCurrentSession()?.userId
+            }
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('좋아요 처리 오류:', error);
+        throw error;
+    }
+};
 
 

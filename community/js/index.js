@@ -43,9 +43,14 @@ const loadPosts = async () => {
 
 const init = async () => {
     try {
-        await authCheck();  // 인증 체크
+        const auth = await authCheck();
+        if (!auth) {
+            window.location.href = './login.html';
+            return;
+        }
+        
         initializeHeader();
-        await loadPosts();  // 게시글 로드
+        loadPosts();
     } catch (error) {
         console.error('초기화 중 오류:', error);
         window.location.href = './login.html';
