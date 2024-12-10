@@ -672,11 +672,21 @@ const init = async () => {
     }
 };
 
+// 페이지네이션 상태 관리
+let page = 1;
+const PAGE_SIZE = 10;
+let isLoading = false;
+let hasMore = true;
+
+// 게시글 목록 로드 함수 수정
 const loadPosts = async () => {
     try {
-        console.log('게시글 목록 로드 시작');
+        if (isLoading || !hasMore) return;
         
-        const response = await fetch(`${getServerUrl()}/api/posts`, {
+        isLoading = true;
+        console.log(`페이지 ${page} 로드 시작`);
+        
+        const response = await fetch(`${getServerUrl()}/api/posts?page=${page}&limit=${PAGE_SIZE}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -685,31 +695,40 @@ const loadPosts = async () => {
             }
         });
 
-        console.log('서버 응답:', response);
-
         if (!response.ok) {
             throw new Error('게시글 목록을 불러오는데 실패했습니다.');
         }
 
         const data = await response.json();
-        console.log('받은 데이터:', data);
-
-        if (data.success && data.data) {
-            renderPosts(data.data);
-        } else {
-            throw new Error(data.message || '게시글 목록을 불러오는데 실패했습니다.');
+        console.log('서버 응답:', data); // 디버깅용
+        
+        if (data.success && Array.isArray(data.data)) {
+            // 데이터가 더 있는지 확인 (마지막 페이지 체크)
+            hasMore = data.data.length === PAGE_SIZE;
+            
+            // 게시글 렌더링
+            renderPosts(data.data, page === 1);
+            
+            // 페이지 증가
+            page++;
         }
     } catch (error) {
         console.error('게시글 목록 로드 오류:', error);
         alert(error.message);
+    } finally {
+        isLoading = false;
     }
 };
 
-const renderPosts = (posts) => {
+// 게시글 렌더링 함수
+const renderPosts = (posts, isFirstPage) => {
     const listElement = document.querySelector('.boardList');
     if (!listElement) return;
 
-    listElement.innerHTML = '';  // 기존 목록 초기화
+    // 첫 페이지일 경우에만 초기화
+    if (isFirstPage) {
+        listElement.innerHTML = '';
+    }
 
     posts.forEach(post => {
         const postElement = document.createElement('div');
@@ -721,6 +740,7 @@ const renderPosts = (posts) => {
             <div class="stats">
                 <span>조회 ${post.hits || 0}</span>
                 <span>댓글 ${post.comment_count || 0}</span>
+                <span>좋아요 ${post.like_count || 0}</span>
             </div>
         `;
 
@@ -732,87 +752,20 @@ const renderPosts = (posts) => {
     });
 };
 
-// 게시글 데이터를 받아와서 화면에 표시하는 함수
-const renderPost = (postData) => {
-    console.log('렌더링할 데이터:', postData); // 디버깅을 위한 로그 추가
-
-    const titleElement = document.querySelector('.post-title');
-    const contentElement = document.querySelector('.post-content');
-    const authorElement = document.querySelector('.post-author');
-    const dateElement = document.querySelector('.post-date');
-
-    if (titleElement) titleElement.textContent = postData.title;
-    if (contentElement) contentElement.textContent = postData.content;
-    if (authorElement) authorElement.textContent = postData.author;
-    if (dateElement) dateElement.textContent = new Date(postData.created_at).toLocaleDateString();
-};
-
-// 게시글 로드 함수
-const loadPost = async (postId) => {
-    try {
-        const response = await fetch(`${getServerUrl()}/api/posts/${postId}`, {
-            headers: {
-                'Authorization': `Bearer ${getCurrentSession().sessionId}`,
-                'userId': getCurrentSession().userId
-            }
-        });
-
-        const data = await response.json();
-        console.log('받아온 데이터:', data); // 디버깅을 위한 로그 추가
-
-        if (data.success) {
-            renderPost(data.data);
-        } else {
-            throw new Error('게시글을 불러오는데 실패했습니다.');
+// 스크롤 이벤트 핸들러
+const initializeInfiniteScroll = () => {
+    window.addEventListener('scroll', () => {
+        // 스크롤이 페이지 하단에 도달했는지 확인
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+            loadPosts();
         }
-    } catch (error) {
-        console.error('시글 로드 중 오류:', error);
-        alert(error.message);
-    }
+    });
 };
 
-// URL에서 게시글 ID를 제대로 가져오는지 확인
-const postId = new URLSearchParams(window.location.search).get('id');
-console.log('게시글 ID:', postId);
-
+// 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', () => {
-    const postId = new URLSearchParams(window.location.search).get('id');
-    console.log('게시글 ID:', postId); // 디버깅을 위한 로그 추가
-
-    if (postId) {
-        loadPost(postId);
-    }
-});
-
-// 페이지 로드 시 실행
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // header 초기화 추가
-        initializeHeader();
-        
-        const postId = getQueryString('id');
-        console.log('게시글 ID:', postId);
-
-        if (!postId) {
-            throw new Error('게시글 ID가 없습니다.');
-        }
-
-        const myInfo = getCurrentSession();
-        console.log('현재 세션:', myInfo);
-
-        const response = await getPost(postId);
-        const result = await response.json();
-        console.log('게시글 데이터:', result);
-
-        if (result.success) {
-            await setBoardDetail(result.data, myInfo);
-        } else {
-            throw new Error(result.message || '게시글 로드에 실패했습니다.');
-        }
-    } catch (error) {
-        console.error('페이지 로드 오류:', error);
-        alert(error.message);
-    }
+    loadPosts(); // 첫 페이지 로드
+    initializeInfiniteScroll(); // 인피니티 스크롤 초기화
 });
 
 const handleCommentLike = async (postId, commentId) => {
