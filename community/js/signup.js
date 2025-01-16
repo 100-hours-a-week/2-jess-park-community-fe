@@ -8,11 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileInput = document.getElementById('profile');
     const signupBtn = document.getElementById('signupBtn');
 
-    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    const validatePassword = (password) => password.length >= 8;
+    const validateEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validatePassword = password => password.length >= 8;
 
     const validateField = (input, validator, errorMessage) => {
-        const helperText = document.querySelector(`.helperText[name="${input.name}"]`);
+        const helperText = document.querySelector(
+            `.helperText[name="${input.name}"]`,
+        );
         if (!validator(input.value)) {
             helperText.textContent = errorMessage;
             return false;
@@ -21,14 +23,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
-    signupBtn.addEventListener('click', async (e) => {
+    signupBtn.addEventListener('click', async e => {
         e.preventDefault();
 
         const validations = [
-            validateField(emailInput, validateEmail, '유효한 이메일 주소를 입력해주세요.'),
-            validateField(pwInput, validatePassword, '비밀번호는 8자 이상이어야 합니다.'),
-            validateField(pwckInput, (pwck) => pwck === pwInput.value, '비밀번호가 일치하지 않습니다.'),
-            validateField(nicknameInput, (nickname) => nickname.length > 0, '닉네임을 입력해주세요.')
+            validateField(
+                emailInput,
+                validateEmail,
+                '유효한 이메일 주소를 입력해주세요.',
+            ),
+            validateField(
+                pwInput,
+                validatePassword,
+                '비밀번호는 8자 이상이어야 합니다.',
+            ),
+            validateField(
+                pwckInput,
+                pwck => pwck === pwInput.value,
+                '비밀번호가 일치하지 않습니다.',
+            ),
+            validateField(
+                nicknameInput,
+                nickname => nickname.length > 0,
+                '닉네임을 입력해주세요.',
+            ),
         ];
 
         if (!validations.every(Boolean)) return;

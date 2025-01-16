@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nicknameInput.placeholder = `현재 닉네임: ${loggedInUser.nickname}`;
     }
 
-    profileForm.addEventListener('submit', async (e) => {
+    profileForm.addEventListener('submit', async e => {
         e.preventDefault();
 
         if (!loggedInUser) {
@@ -32,15 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('http://localhost:3001/api/user/profile', {
-                method: 'PUT',
-                body: formData,
-            });
+            const response = await fetch(
+                'http://localhost:3001/api/user/profile',
+                {
+                    method: 'PUT',
+                    body: formData,
+                },
+            );
 
             const result = await response.json();
             if (result.success) {
                 // localStorage에 수정된 정보 업데이트
-                localStorage.setItem('loggedInUser', JSON.stringify(result.data));
+                localStorage.setItem(
+                    'loggedInUser',
+                    JSON.stringify(result.data),
+                );
                 alert('회원정보가 수정되었습니다.');
                 window.location.reload(); // 페이지 새로고침
             } else {

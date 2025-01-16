@@ -153,7 +153,7 @@ h2 {
 
 #submit-comment {
     padding: 8px 16px;
-    background-color: #7F6AEE;
+    background-color: #7f6aee;
     color: white;
     border: none;
     border-radius: 4px;
@@ -161,7 +161,7 @@ h2 {
 }
 
 #submit-comment:hover {
-    background-color: #6A57C7;
+    background-color: #6a57c7;
 }
 
 .comment-item {

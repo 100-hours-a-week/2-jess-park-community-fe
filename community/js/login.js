@@ -1,6 +1,6 @@
 import { loginRequest } from '../api/loginRequest.js';
 
-document.getElementById('loginBtn').addEventListener('click', async (event) => {
+document.getElementById('loginBtn').addEventListener('click', async event => {
     event.preventDefault(); // 기본 동작 방지
 
     const email = document.getElementById('email').value.trim();

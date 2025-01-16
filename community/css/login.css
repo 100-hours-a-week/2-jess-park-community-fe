@@ -50,16 +50,16 @@ article {
 }
 
 .inputBox input[type='text'] {
-    flex-grow: 1; 
-    padding-right: 10px; 
+    flex-grow: 1;
+    padding-right: 10px;
 }
 .inputBox .lottie {
     position: absolute;
-    right: 10px; 
+    right: 10px;
     top: 50%;
 
-    width: 20px; 
-    height: 20px; 
+    width: 20px;
+    height: 20px;
 }
 
 .inputBox input[type='file'] {
@@ -128,7 +128,6 @@ a {
 }
 
 #toastContainer {
-   
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -158,7 +157,7 @@ a {
 
 .profileUploadButton {
     padding: 8px 16px;
-    background-color: #7F6AEE;
+    background-color: #7f6aee;
     color: white;
     border-radius: 4px;
     cursor: pointer;
@@ -166,7 +165,7 @@ a {
 }
 
 .profileUploadButton:hover {
-    background-color: #6A57D5;
+    background-color: #6a57d5;
 }
 
 #profilePreview {
@@ -239,13 +238,13 @@ a {
 }
 
 .dialogContent .confirmBtn {
-    background-color: #7F6AEE;
+    background-color: #7f6aee;
     color: white;
     min-width: 80px;
 }
 
 .dialogContent .confirmBtn:hover {
-    background-color: #6A57C7;
+    background-color: #6a57c7;
 }
 
 .dialogContent .cancelBtn {
@@ -276,13 +275,13 @@ header {
     height: 48px;
     border: none;
     border-radius: 8px;
-    background-color: #7F6AEE;
+    background-color: #7f6aee;
     color: white;
     font-size: 16px;
     cursor: pointer;
 }
 
 #signupBtn:disabled {
-    background-color: #ACA0EB;
+    background-color: #aca0eb;
     cursor: default;
 }

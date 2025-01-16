@@ -1,11 +1,14 @@
 export async function modifyPassword(email, currentPassword, newPassword) {
     try {
         // 비밀번호 변경 요청
-        const response = await fetch('http://localhost:3001/api/user/password', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, currentPassword, newPassword }),
-        });
+        const response = await fetch(
+            'http://localhost:3001/api/user/password',
+            {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, currentPassword, newPassword }),
+            },
+        );
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -24,10 +27,9 @@ export async function modifyPassword(email, currentPassword, newPassword) {
             }
             alert('비밀번호가 성공적으로 변경되었습니다.');
             return true;
-        } else {
-            alert(result.message);
-            return false;
         }
+        alert(result.message);
+        return false;
     } catch (error) {
         console.error('비밀번호 변경 중 오류:', error);
         alert('비밀번호 변경에 실패했습니다.');

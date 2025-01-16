@@ -3,29 +3,34 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="./css/common/layout.css">
-        <link rel="stylesheet" href="./css/board.css">
-        <link rel="stylesheet" href="./component/header/header.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="./css/common/layout.css" />
+        <link rel="stylesheet" href="./css/board.css" />
+        <link rel="stylesheet" href="./component/header/header.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+        />
         <title>Community</title>
     </head>
     <body>
         <header>
-            <img class="back"
-                 src="/public/navigate_before.svg"
-                 onclick="location.href='/index.html'">
+            <img
+                class="back"
+                src="/public/navigate_before.svg"
+                onclick="location.href='/index.html'"
+            />
             <h1>커뮤니티</h1>
             <div class="profile">
-                <img 
-                    class="profile" 
-                    loading="eager" 
+                <img
+                    class="profile"
+                    loading="eager"
                     src="/public/image/profile/default.webp"
                     alt="프로필"
-                >
+                />
                 <div class="drop none">
                     <a href="/modifyInfo.html">회원정보수정</a>
                     <a href="/modifyPassword.html">비밀번호수정</a>
-                    <a id="logoutBtn" style="cursor: pointer;">로그아웃</a>
+                    <a id="logoutBtn" style="cursor: pointer">로그아웃</a>
                 </div>
             </div>
         </header>
@@ -35,7 +40,10 @@
                 <h1 class="title"></h1>
                 <div class="writeWrap">
                     <div class="profileImg">
-                        <img src="/public/image/profile/default.webp" alt="프로필 이미지" />
+                        <img
+                            src="/public/image/profile/default.webp"
+                            alt="프로필 이미지"
+                        />
                     </div>
                     <div class="writerInfo">
                         <span class="nickname"></span>
@@ -48,7 +56,6 @@
                 </div>
             </section>
 
-            
             <section class="boardList">
                 <!-- 게시글이 JavaScript에서 동적으로 렌더링됩니다 -->
             </section>
@@ -78,14 +85,18 @@
 
             <section class="comment">
                 <div class="commentInputWrap">
-                    <textarea placeholder="댓글을 남겨주세요!" maxlength="1000"></textarea>
+                    <textarea
+                        placeholder="댓글을 남겨주세요!"
+                        maxlength="1000"
+                    ></textarea>
                     <div>
-                        <button class="commentInputBtn" disabled>댓글 등록</button>
+                        <button class="commentInputBtn" disabled>
+                            댓글 등록
+                        </button>
                     </div>
                 </div>
                 <div class="commentList"></div>
             </section>
-            
         </section>
         <div class="background"></div>
         <script src="./js/board.js" type="module"></script>

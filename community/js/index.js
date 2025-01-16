@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const limit = 10;
     let isLoading = false;
 
-    const renderPosts = (posts) => {
+    const renderPosts = posts => {
         if (!posts.length) {
             boardList.innerHTML += '<p>더 이상 게시글이 없습니다.</p>';
             return;
@@ -16,19 +16,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const postHTML = posts
             .map(
-                (post) => `
+                post => `
                 <div class="boardItem" data-id="${post.id}">
                     <h3>${post.title}</h3>
                     <p>작성일: ${new Date(post.createdAt).toLocaleDateString()} | 조회수: ${post.views || 0}</p>
                 </div>
-            `
+            `,
             )
             .join('');
 
         boardList.innerHTML += postHTML;
 
         // 게시글 클릭 이벤트 추가
-        document.querySelectorAll('.boardItem').forEach((item) => {
+        document.querySelectorAll('.boardItem').forEach(item => {
             item.addEventListener('click', () => {
                 const postId = item.dataset.id;
 
@@ -60,7 +60,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const handleScroll = () => {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        const { scrollTop, scrollHeight, clientHeight } =
+            document.documentElement;
         if (scrollTop + clientHeight >= scrollHeight - 100) {
             loadMorePosts();
         }

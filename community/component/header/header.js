@@ -9,14 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 프로필 클릭 시 드롭다운 메뉴 토글
-    profile.addEventListener('click', (event) => {
+    profile.addEventListener('click', event => {
         dropMenu.classList.toggle('none');
         event.stopPropagation(); // 이벤트 버블링 방지
     });
 
     // 클릭 외부 시 드롭다운 메뉴 닫기
-    document.addEventListener('click', (event) => {
-        if (!profile.contains(event.target) && !dropMenu.contains(event.target)) {
+    document.addEventListener('click', event => {
+        if (
+            !profile.contains(event.target) &&
+            !dropMenu.contains(event.target)
+        ) {
             dropMenu.classList.add('none');
         }
     });

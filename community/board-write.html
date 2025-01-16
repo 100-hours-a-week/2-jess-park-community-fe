@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="kr">
     <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>게시글 작성</title>
         <link
             rel="stylesheet"
@@ -13,28 +13,28 @@
     </head>
     <body>
         <header>
-            <img 
-                class="back" 
-                src="/public/navigate_before.svg" 
+            <img
+                class="back"
+                src="/public/navigate_before.svg"
                 onclick="location.href='/index.html'"
                 alt="뒤로가기"
-            >
+            />
             <h1>커뮤니티</h1>
             <div class="profile">
-                <img 
-                    class="profile" 
-                    loading="eager" 
+                <img
+                    class="profile"
+                    loading="eager"
                     src="/public/image/profile/default.webp"
                     alt="프로필"
-                >
+                />
                 <div class="drop none">
                     <a href="/modifyInfo.html">회원정보수정</a>
                     <a href="/modifyPassword.html">비밀번호수정</a>
-                    <a id="logoutBtn" style="cursor: pointer;">로그아웃</a>
+                    <a id="logoutBtn" style="cursor: pointer">로그아웃</a>
                 </div>
             </div>
         </header>
-        
+
         <div class="wrap">
             <h2>게시글 작성</h2>
             <div class="inputBox">
@@ -52,7 +52,7 @@
                     placeholder="내용을 입력해 주세요"
                 ></textarea>
                 <p class="helperText" name="content"></p>
-            </div>    
+            </div>
             <div class="inputBox">
                 <label class="non-border">이미지</label>
                 <input
@@ -63,7 +63,7 @@
                     accept="image/*"
                 />
                 <div id="imagePreview" class="image-preview"></div>
-                <p id="imagePreviewText" style="display: none;"></p>
+                <p id="imagePreviewText" style="display: none"></p>
             </div>
             <button id="submit">저장</button>
         </div>

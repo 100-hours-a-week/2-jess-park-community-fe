@@ -47,7 +47,7 @@
 
 .dialog-button {
     padding: 8px 24px;
-    background: #7F6AEE;
+    background: #7f6aee;
     color: white;
     border: none;
     border-radius: 4px;
@@ -55,7 +55,7 @@
 }
 
 .dialog-button:hover {
-    background: #6A57C7;
+    background: #6a57c7;
 }
 
 .dialog-description-textarea {

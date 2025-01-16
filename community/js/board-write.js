@@ -1,4 +1,8 @@
-import { createPost, updatePost, fetchPostById } from '../api/board-writeRequest.js';
+import {
+    createPost,
+    updatePost,
+    fetchPostById,
+} from '../api/board-writeRequest.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const titleInput = document.getElementById('title');
@@ -36,30 +40,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     submitButton.addEventListener('click', async () => {
         const title = titleInput.value.trim();
         const content = contentInput.value.trim();
-
+    
         if (!title || !content) {
             alert('제목과 내용을 모두 입력해 주세요.');
             return;
         }
-
+    
         try {
             const postData = { title, content, author };
-            console.log('Submitting Post Data:', postData); // 요청 데이터 확인
-
+            console.log('Submitting Post Data:', postData);
+    
             if (postId) {
                 // 수정 요청
                 await updatePost(postId, postData);
                 alert('게시글이 수정되었습니다.');
+                window.location.href = `board.html?id=${postId}`;
             } else {
                 // 작성 요청
-                await createPost(postData);
+                const createdPost = await createPost(postData); // 작성된 게시글 데이터 반환
                 alert('게시글이 작성되었습니다.');
+                window.location.href = `board.html?id=${createdPost.data.id}`; // 작성된 게시글의 ID로 리다이렉트
             }
-
-            window.location.href = `board.html?id=${postId || ''}`;
         } catch (error) {
             console.error('Error submitting post:', error);
             alert('게시글 작성/수정 중 오류가 발생했습니다.');
         }
     });
+    
 });

@@ -1,7 +1,7 @@
 const API_BASE_URL = 'http://localhost:3002/api';
 
 // 공통 응답 처리 함수
-const handleResponse = async (response) => {
+const handleResponse = async response => {
     if (!response.ok) {
         const error = await response.json();
         console.error('API Error:', error.message || 'Unknown error');
@@ -11,7 +11,7 @@ const handleResponse = async (response) => {
 };
 
 // 게시글 작성
-export const createPost = async (postData) => {
+export const createPost = async postData => {
     const response = await fetch(`${API_BASE_URL}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,11 +31,10 @@ export const updatePost = async (postId, postData) => {
 };
 
 // 게시글 조회
-export const fetchPostById = async (postId) => {
+export const fetchPostById = async postId => {
     const response = await fetch(`${API_BASE_URL}/posts/${postId}`);
     if (!response.ok) {
         throw new Error('게시글 조회 실패');
     }
     return await response.json();
 };
-

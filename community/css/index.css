@@ -17,7 +17,7 @@
     align-items: flex-start;
     row-gap: 32px;
     padding: 40px 0 24px 0;
-    width: 100%; 
+    width: 100%;
 }
 .write h2 {
     font-size: 24px;
@@ -26,10 +26,10 @@
     letter-spacing: -0.02em;
     color: rgba(69, 72, 84, 1);
     text-align: center;
-    width: 100%; 
+    width: 100%;
 }
 .write a {
-    margin-left: auto; 
+    margin-left: auto;
     margin-right: 10px;
     padding: 7px 32px;
     border-radius: 18px;
@@ -60,7 +60,7 @@ b {
     right: 0;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 8px 0;
     min-width: 150px;
 }
