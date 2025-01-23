@@ -3,193 +3,203 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcrypt';
 import multer from 'multer';
+import helmet from 'helmet';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = 3001;
 
+// 비밀 키
+const SECRET_KEY = 'your_secret_key';
+
 // CORS 설정
-app.use(
-    cors({
-        origin: ['http://localhost:3001', 'http://127.0.0.1:5500'], // 허용 도메인
-        credentials: true, // 쿠키 허용
-    }),
-);
+app.use(cors({
+    origin: 'http://127.0.0.1:5500',  // 클라이언트 주소
+    credentials: true,  // 쿠키 허용
+    allowedHeaders: ['Content-Type', 'Authorization'],  // JWT 인증 헤더 허용
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // 허용할 메서드 지정
+}));
+
+
+
 
 // 미들웨어 설정
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(helmet());
+
 
 // 데이터 경로 설정
-const dataDir = './data';
-const usersFilePath = path.join(dataDir, 'users.json');
-const upload = multer({ dest: '/data' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const usersFilePath = path.join(__dirname, 'data', 'users.json');
+
+const upload = multer({ dest: 'uploads/' });
+
+// JWT 인증 미들웨어
+const verifyToken = (req, res, next) => {
+    let token = req.cookies['token'];  // 🔍 쿠키에서 JWT 가져오기
+
+    console.log('🔍 요청에서 받은 쿠키:', req.cookies);  // ✅ 디버깅용 로그
+
+    if (!token && req.headers['authorization']) {
+        const bearerHeader = req.headers['authorization'];
+        if (bearerHeader) {
+            const bearer = bearerHeader.split(' ');
+            token = bearer[1];  
+        }
+    }
+
+    if (!token) {
+        console.warn('⚠️ JWT 토큰이 없습니다.');
+        return res.status(401).json({ success: false, message: '토큰이 없습니다.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.user = decoded; // ✅ JWT에서 사용자 정보 추출
+        console.log('✅ 인증된 사용자:', decoded);
+        next();
+    } catch (error) {
+        console.error('❌ JWT 검증 실패:', error);
+        return res.status(401).json({ success: false, message: '유효하지 않은 토큰' });
+    }
+};
+
+
+
+
+
+
 
 // 데이터 로드 함수
-const loadData = filePath => {
+const loadUsers = () => {
     try {
-        if (!fs.existsSync(filePath)) {
-            fs.writeFileSync(filePath, JSON.stringify([], null, 2));
+        console.log('🔍 users.json 파일 경로:', usersFilePath);
+
+        if (!fs.existsSync(usersFilePath)) {
+            console.warn('⚠️ users.json 파일이 존재하지 않습니다. 새로 생성합니다.');
+            fs.writeFileSync(usersFilePath, JSON.stringify([], null, 2));
         }
-        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+        const data = fs.readFileSync(usersFilePath, 'utf8');
+        console.log('📄 users.json 내용:', data);
+
+        return JSON.parse(data);
     } catch (error) {
-        console.error(`Error loading data from ${filePath}:`, error);
+        console.error('❌ users.json 파일 로드 중 오류 발생:', error);
         return [];
     }
 };
 
+
 // 데이터 저장 함수
-const saveData = (filePath, data) => {
+const saveUsers = (users) => {
     try {
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+        console.log('✅ users.json 저장 완료');
     } catch (error) {
-        console.error(`Error saving data to ${filePath}:`, error);
+        console.error('❌ users.json 저장 중 오류 발생:', error);
     }
 };
 
-// 공통 응답 함수
-const createResponse = (success, message, data = null) => ({
-    success,
-    message,
-    data,
+// 로그인 상태 확인
+app.get('/api/auth/check', verifyToken, (req, res) => {
+    res.json({ success: true, user: req.user });
 });
 
-// 사용자 데이터 로드 및 저장
-const loadUsers = () => loadData(usersFilePath);
-const saveUsers = users => saveData(usersFilePath, users);
-
-// 회원가입
-app.post('/api/signup', (req, res) => {
-    const { email, password, nickname } = req.body;
-    const users = loadUsers();
-
-    if (users.some(user => user.email === email)) {
-        return res
-            .status(409)
-            .json(createResponse(false, '이미 존재하는 이메일입니다.'));
-    }
-
-    const newUser = {
-        id: Date.now(),
-        email,
-        password,
-        nickname,
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-    res.status(201).json(
-        createResponse(true, '회원가입이 완료되었습니다.', {
-            userId: newUser.id,
-        }),
-    );
-});
-
-// 로그인
-app.post('/api/login', (req, res) => {
+// 로그인 API
+app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const users = loadUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    const user = users.find((u) => u.email === email);
 
     if (!user) {
-        return res
-            .status(401)
-            .json(createResponse(false, '잘못된 이메일 또는 비밀번호입니다.'));
+        return res.status(401).json({ success: false, message: '이메일 또는 비밀번호가 올바르지 않습니다.' });
     }
 
-    res.json(
-        createResponse(true, '로그인 성공', {
-            email: user.email,
-            nickname: user.nickname,
-        }),
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return res.status(401).json({ success: false, message: '이메일 또는 비밀번호가 올바르지 않습니다.' });
+    }
+
+    const token = jwt.sign({ email: user.email, nickname: user.nickname }, SECRET_KEY, { expiresIn: '1h' });
+
+    res.cookie('token', token, {
+        httpOnly: true,  // 자바스크립트로 쿠키에 접근할 수 없음
+        secure: false,   // 개발 환경에서는 false
+        maxAge: 3600000,  // 1시간
+    });
+    console.log("토큰 쿠키 설정:", token);
+    res.json({ success: true, message: '로그인 성공' });
+});
+
+
+
+
+
+// 로그아웃 API
+app.post('/api/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ success: true, message: '로그아웃 성공' });
 });
 
 // 비밀번호 변경
-app.put('/api/user/password', (req, res) => {
+app.put('/api/user/password', verifyToken, async (req, res) => {
     console.log('비밀번호 변경 요청 데이터:', req.body);
 
-    const { email, currentPassword, newPassword } = req.body;
-
-    if (!email || !currentPassword || !newPassword) {
-        return res
-            .status(400)
-            .json({ success: false, message: '필수 정보가 누락되었습니다.' });
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: '필수 정보가 누락되었습니다.' });
     }
-
-    const users = loadData(usersFilePath);
-    const user = users.find(u => u.email === email);
-
-    if (!user) {
-        console.log('사용자를 찾을 수 없습니다:', email);
-        return res
-            .status(404)
-            .json({ success: false, message: '사용자를 찾을 수 없습니다.' });
-    }
-
-    if (user.password !== currentPassword) {
-        console.log('현재 비밀번호 불일치:', currentPassword);
-        return res.status(401).json({
-            success: false,
-            message: '현재 비밀번호가 올바르지 않습니다.',
-        });
-    }
-
-    user.password = newPassword;
-    saveData(usersFilePath, users);
-    console.log('비밀번호 변경 성공:', email);
-
-    res.json({
-        success: true,
-        message: '비밀번호가 성공적으로 변경되었습니다.',
-    });
-});
-
-// 로그인 상태 확인
-app.get('/api/auth/check', (req, res) => {
-    const { email } = req.query;
-    const users = loadUsers();
-    const user = users.find(u => u.email === email);
-
-    if (!user) {
-        return res
-            .status(404)
-            .json(createResponse(false, '사용자를 찾을 수 없습니다.'));
-    }
-
-    res.status(200).json(
-        createResponse(true, '로그인 상태 확인 성공', {
-            email: user.email,
-            nickname: user.nickname,
-        }),
-    );
-});
-
-// 프로필 업데이트 엔드포인트 수정
-app.put('/api/user/profile', upload.single('profile'), (req, res) => {
-    const { email } = req.body;
-    const { nickname } = req.body;
-    const profilePath = req.file ? req.file.path : null;
 
     const users = loadUsers();
-    const user = users.find(u => u.email === email);
+    const user = users.find((u) => u.email === req.user.email); // JWT에서 사용자 정보 가져오기
 
     if (!user) {
-        return res
-            .status(404)
-            .json(createResponse(false, '사용자를 찾을 수 없습니다.'));
+        console.log('사용자를 찾을 수 없습니다:', req.user.email);
+        return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
     }
 
-    // 사용자 정보 업데이트
-    if (nickname) user.nickname = nickname;
-    if (profilePath) user.profile = profilePath; // 프로필 이미지 경로 저장
+    // 현재 비밀번호 확인
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+        console.log('현재 비밀번호 불일치:', req.user.email);
+        return res.status(401).json({ success: false, message: '현재 비밀번호가 올바르지 않습니다.' });
+    }
 
+    // 새로운 비밀번호 암호화 후 저장
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
     saveUsers(users);
-    res.json(
-        createResponse(true, '회원정보가 성공적으로 수정되었습니다.', user),
-    );
+
+    console.log('비밀번호 변경 성공:', req.user.email);
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
 });
 
-// 서버 시작
+
+// 프로필 수정
+app.put('/api/user/profile', verifyToken, async (req, res) => {
+    const { nickname } = req.body;
+    const users = loadUsers();
+    const user = users.find(u => u.email === req.user.email);
+
+    if (!user) {
+        return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    user.nickname = nickname;  // 닉네임 업데이트
+    saveUsers(users);
+
+    res.json({ success: true, user });
+});
+
 app.listen(PORT, () => {
-    console.log(`서버가 http://localhost:${PORT}에서 실행 중입니다.`);
+    console.log(`서버 실행 중: http://localhost:${PORT}`);
 });

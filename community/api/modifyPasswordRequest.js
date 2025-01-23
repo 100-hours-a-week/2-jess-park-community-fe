@@ -1,4 +1,4 @@
-export async function modifyPassword(email, currentPassword, newPassword) {
+export async function modifyPassword(currentPassword, newPassword) {
     try {
         // 비밀번호 변경 요청
         const response = await fetch(
@@ -6,7 +6,8 @@ export async function modifyPassword(email, currentPassword, newPassword) {
             {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, currentPassword, newPassword }),
+                body: JSON.stringify({ currentPassword, newPassword }),
+                credentials: 'include'  // 쿠키 세션을 포함
             },
         );
 
@@ -19,12 +20,6 @@ export async function modifyPassword(email, currentPassword, newPassword) {
         const result = await response.json();
 
         if (result.success) {
-            // 로컬 스토리지 업데이트
-            const userInfo = JSON.parse(localStorage.getItem('loggedInUser'));
-            if (userInfo) {
-                userInfo.password = newPassword; // 비밀번호는 보통 저장하지 않지만 예제용으로 추가
-                localStorage.setItem('loggedInUser', JSON.stringify(userInfo));
-            }
             alert('비밀번호가 성공적으로 변경되었습니다.');
             return true;
         }

@@ -1,40 +1,82 @@
-const API_BASE_URL = 'http://localhost:3002/api';
+import { createPost, updatePost, fetchPostById } from '../api/board-writeRequest.js';
 
-// 공통 응답 처리 함수
-const handleResponse = async response => {
-    if (!response.ok) {
-        const error = await response.json();
-        console.error('API Error:', error.message || 'Unknown error');
-        throw new Error(error.message || '요청 처리 실패');
+document.addEventListener('DOMContentLoaded', async () => {
+    const titleInput = document.getElementById('title');
+    const contentInput = document.getElementById('content');
+    const submitButton = document.getElementById('submit');
+    const postId = new URLSearchParams(window.location.search).get('id'); // URL에서 id 가져오기
+
+    let author = '';
+
+    // JWT 토큰 가져오기
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
     }
-    return await response.json();
-};
 
-// 게시글 작성
-export const createPost = async postData => {
-    const response = await fetch(`${API_BASE_URL}/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData),
-    });
-    return await handleResponse(response);
-};
+    // 사용자 정보 가져오기 (JWT 기반)
+    try {
+        const response = await fetch('http://localhost:3002/api/auth/user', { 
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-// 게시글 수정
-export const updatePost = async (postId, postData) => {
-    const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData),
-    });
-    return await handleResponse(response);
-};
+        if (!response.ok) throw new Error('사용자 정보를 가져올 수 없습니다.');
 
-// 게시글 조회
-export const fetchPostById = async postId => {
-    const response = await fetch(`${API_BASE_URL}/posts/${postId}`);
-    if (!response.ok) {
-        throw new Error('게시글 조회 실패');
+        const data = await response.json();
+        if (!data.success) throw new Error('로그인이 필요합니다.');
+
+        author = data.user.nickname;
+    } catch (error) {
+        console.error('사용자 정보 가져오기 실패:', error);
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
     }
-    return await response.json();
-};
+    
+    // 수정 모드인지 확인
+    if (postId) {
+        try {
+            const post = await fetchPostById(postId);
+            if (!post || !post.success || !post.data) throw new Error('게시글을 불러올 수 없음');
+
+            titleInput.value = post.data.title || '';
+            contentInput.value = post.data.content || '';
+            submitButton.textContent = '수정 완료';
+        } catch (error) {
+            console.error('게시글 가져오기 실패:', error);
+            alert('게시글 정보를 불러올 수 없습니다.');
+        }
+    }
+
+    // 저장 버튼 클릭 이벤트
+    submitButton.addEventListener('click', async () => {
+        const title = titleInput.value.trim();
+        const content = contentInput.value.trim();
+
+        if (!title || !content) {
+            alert('제목과 내용을 모두 입력해 주세요.');
+            return;
+        }
+
+        try {
+            const postData = { title, content, author };
+
+            if (postId) {
+                await updatePost(postId, postData, token);
+                alert('게시글이 수정되었습니다.');
+                window.location.href = `board.html?id=${postId}`;
+            } else {
+                const createdPost = await createPost(postData, token);
+                alert('게시글이 작성되었습니다.');
+                window.location.href = `board.html?id=${createdPost.data.id}`;
+            }
+        } catch (error) {
+            console.error('게시글 처리 중 오류:', error);
+            alert('게시글 저장에 실패했습니다.');
+        }
+    });
+});

@@ -10,28 +10,30 @@
         <section class="wrap">
             <h1 class="title">로그인</h1>
             <article>
-                <div class="inputBox">
-                    <label for="email">이메일</label>
-                    <input
-                        type="text"
-                        name="email"
-                        id="email"
-                        placeholder="이메일을 입력하세요"
-                    />
-                </div>
-                <div class="inputBox">
-                    <label for="pw">비밀번호</label>
-                    <input
-                        type="password"
-                        name="pw"
-                        id="pw"
-                        placeholder="비밀번호를 입력하세요"
-                    />
-                </div>
-                <div class="buttons">
-                    <button id="loginBtn">로그인</button>
-                    <a href="signup.html">회원가입</a>
-                </div>
+                <form id="loginForm"> <!-- 🛠 폼 추가 -->
+                    <div class="inputBox">
+                        <label for="email">이메일</label>
+                        <input
+                            type="text"
+                            name="email"
+                            id="email"
+                            placeholder="이메일을 입력하세요"
+                        />
+                    </div>
+                    <div class="inputBox">
+                        <label for="pw">비밀번호</label>
+                        <input
+                            type="password"
+                            name="pw"
+                            id="pw"
+                            placeholder="비밀번호를 입력하세요"
+                        />
+                    </div>
+                    <div class="buttons">
+                        <button type="submit" id="loginBtn">로그인</button>
+                        <a href="signup.html">회원가입</a>
+                    </div>
+                </form>
             </article>
         </section>
         <div class="background"></div>

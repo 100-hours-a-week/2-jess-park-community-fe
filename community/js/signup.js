@@ -1,4 +1,4 @@
-import { signupRequest } from '../api/signupRequest.js';
+import signupRequest from '../api/signupRequest.js';  
 
 document.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('email');
@@ -25,40 +25,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     signupBtn.addEventListener('click', async e => {
         e.preventDefault();
-
-        const validations = [
-            validateField(
-                emailInput,
-                validateEmail,
-                '유효한 이메일 주소를 입력해주세요.',
-            ),
-            validateField(
-                pwInput,
-                validatePassword,
-                '비밀번호는 8자 이상이어야 합니다.',
-            ),
-            validateField(
-                pwckInput,
-                pwck => pwck === pwInput.value,
-                '비밀번호가 일치하지 않습니다.',
-            ),
-            validateField(
-                nicknameInput,
-                nickname => nickname.length > 0,
-                '닉네임을 입력해주세요.',
-            ),
-        ];
-
-        if (!validations.every(Boolean)) return;
-
+    
+        const email = emailInput.value.trim();
+        const password = pwInput.value.trim();
+        const passwordCheck = pwckInput.value.trim();
+        const nickname = nicknameInput.value.trim();
+    
+        console.log("입력된 회원가입 데이터:", email, password, nickname);  // ✅ 확인
+    
+        if (!email || !password || !nickname) {
+            alert("모든 필드를 입력해주세요.");
+            return;
+        }
+    
+        if (password !== passwordCheck) {
+            alert("비밀번호가 일치하지 않습니다.");
+            return;
+        }
+    
         const formData = new FormData();
-        formData.append('email', emailInput.value);
-        formData.append('password', pwInput.value);
-        formData.append('nickname', nicknameInput.value);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('nickname', nickname);
         if (profileInput.files[0]) {
             formData.append('profile', profileInput.files[0]);
         }
-
+    
         try {
             const response = await signupRequest(formData);
             if (response.success) {
@@ -71,4 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('회원가입 중 오류가 발생했습니다.');
         }
     });
+    
+    
+    
 });

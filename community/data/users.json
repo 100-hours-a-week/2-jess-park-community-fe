@@ -1,8 +1,14 @@
 [
-    {
-        "id": 1735631676885,
-        "email": "test1@test1.com",
-        "password": "P@ssw0rd",
-        "nickname": "test1"
-    }
+  {
+    "id": 1737334506322,
+    "email": "test@test.com",
+    "password": "$2b$10$cbDwII1gJLm0GVEV231o1OAv0kKcAfylIyYpIFcDeA2yceKqK/O1.",
+    "nickname": "test"
+  },
+  {
+    "id": 1737351567752,
+    "email": "test2@test2.com",
+    "password": "$2b$10$qwZfRUqhMXElp5E.H1OMweIu/n9eQHhXB1wvBO0gJ21ed/LbqR57C",
+    "nickname": "test2"
+  }
 ]

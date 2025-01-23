@@ -21,12 +21,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // URL에서 postId 가져오기
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
-    console.log('Fetched Post ID:', postId); // 디버깅 로그 추가
+    
+    console.log("📌 현재 URL에서 가져온 postId:", postId); // postId 값 확인
+    
+    if (!postId) {
+        console.error('🚨 postId가 존재하지 않습니다. URL을 확인하세요.');
+    }
+    
+
 
     const currentPostId = postId; // 현재 게시글 ID 저장
 
     const renderPost = async post => {
-        if (!post) {
+        console.log("🛠 `renderPost()` 내부에서 post 데이터 확인:", post);
+    
+        if (!post || typeof post !== 'object') {
+            console.error("🚨 `renderPost()`에서 post 데이터가 유효하지 않음:", post);
             titleElement.textContent = '게시글을 찾을 수 없습니다.';
             nicknameElement.textContent = '';
             dateElement.textContent = '';
@@ -35,33 +45,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             deleteBtn.classList.add('hidden');
             return;
         }
-
+    
         // 제목, 작성자, 날짜, 내용 렌더링
         titleElement.textContent = post.title || '제목 없음';
         nicknameElement.textContent = post.author || '익명';
         dateElement.textContent = new Date(post.createdAt).toLocaleDateString();
         contentElement.textContent = post.content || '내용 없음';
-
+    
         // 조회수 렌더링
         const viewCountElement = document.querySelector('.viewCount h3');
         viewCountElement.textContent = post.views || 0;
-
+    
         // 댓글 수 렌더링
         const commentCountElement = document.querySelector('.commentCount h3');
         commentCountElement.textContent = post.commentsCount || 0;
-
+    
         modifyBtn.classList.remove('hidden');
         deleteBtn.classList.remove('hidden');
-
-        const user = JSON.parse(localStorage.getItem('loggedInUser'));
-
-        if (user && post.usersLikes.includes(user.nickname)) {
-            likeButton.classList.add('liked'); // 좋아요 상태
-        } else {
-            likeButton.classList.remove('liked'); // 좋아요 취소 상태
-        }
+    
         await renderComments();
     };
+    
 
     const renderComments = async () => {
         try {
@@ -197,36 +201,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
     
             if (!response.ok) {
-                const error = await response.json();
-                console.error('조회수 증가 실패:', error.message);
-                return null; 
+                const errorData = await response.json();
+                console.warn('조회수 증가 실패:', errorData.message);
+            } else {
+                const data = await response.json();
+                console.log('조회수 업데이트 성공:', data);
             }
-            return await response.json();
         } catch (error) {
             console.error('조회수 증가 중 오류:', error);
-            return null;
         }
     };
     
-   
     const loadPostById = async () => {
         try {
             if (!postId) {
-                console.error('Post ID is missing in URL');
+                console.error('⚠️ Post ID is missing in URL');
                 alert('잘못된 접근입니다.');
                 return;
             }
-            // 조회수 증가 요청
+    
+            console.log(`🔍 현재 게시글 ID: ${postId}`);
+    
+            // 조회수 증가 요청 (실패해도 게시글 데이터는 정상적으로 불러오도록 수정)
             await incrementViewCount(postId);
     
             const response = await getPostData(postId);
-            
+            console.log(`📄 getPostData 응답:`, response);
+    
+            // 데이터 검증
+            if (!response || !response.success || !response.data) {
+                throw new Error('게시글 데이터를 가져오지 못했습니다.');
+            }
+    
+            console.log("✅ `renderPost()` 호출 전 post 데이터 확인:", response.data);
+    
             await renderPost(response.data);
         } catch (error) {
-            console.error('Error loading post by ID:', error);
+            console.error('❌ Error loading post by ID:', error);
             alert('게시글을 불러올 수 없습니다.');
         }
     };
+    
+    
+    
     
 
     modifyBtn.addEventListener('click', () => {
